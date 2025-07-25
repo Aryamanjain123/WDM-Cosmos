@@ -17,12 +17,20 @@ void setup() {
 }
 
 // Send start signal: 8 bits of all 1s (0xFF)
-void sendStartSignal() {
-  for (int bit = 0; bit < 8; bit++) {
-    analogWrite(redLaser,   redPower);
-    analogWrite(greenLaser, greenPower);
-    analogWrite(blueLaser,  bluePower);
-    delay(bitRate);
+void sendStartSignal(char color) {
+  int laserPin = (color == 'R') ? redLaser :
+                 (color == 'G') ? greenLaser :
+                                  blueLaser;
+  if (color == 'R' || color == 'G' || color == 'B') {
+    for (int bit = 0; bit < 8; bit++) {
+      analogWrite(laserPin, 0);
+      delay(bitRate);
+    }}
+  else{
+    analogWrite(redLaser, 0);
+    analogWrite(greenLaser, 0);
+    analogWrite(blueLaser, 0);
+    delay(bitRate * 8);
   }
 
   // Turn off lasers briefly after start signal
@@ -31,7 +39,7 @@ void sendStartSignal() {
   analogWrite(blueLaser, 255);
 }
 void sendWDM(String input) {
-  sendStartSignal();
+  sendStartSignal('W');
 
   // Pad message with spaces so length is multiple of 3
   while (input.length() % 3 != 0) {
@@ -58,7 +66,7 @@ void sendWDM(String input) {
   analogWrite(blueLaser, 0);
 }
 void sendSingleColor(String input, char color) {
-  sendStartSignal();
+  sendStartSignal(color);
   int power = (color == 'R') ? redPower :
               (color == 'G') ? greenPower :
                                bluePower;
