@@ -53,9 +53,9 @@ void sendWDM(String input) {
     char b = input.charAt(i + 2);
 
     for (int bit = 7; bit >= 0; bit--) {
-      analogWrite(redLaser,   ((r >> bit) & 1) ? redPower   : 255);
-      analogWrite(greenLaser, ((g >> bit) & 1) ? greenPower : 255);
-      analogWrite(blueLaser,  ((b >> bit) & 1) ? bluePower  : 255);
+      analogWrite(redLaser,   ((r >> bit) & 1) ? 255   : redPower);
+      analogWrite(greenLaser, ((g >> bit) & 1) ? 255   : greenPower);
+      analogWrite(blueLaser,  ((b >> bit) & 1) ? 255   : bluePower);
       delay(bitRate);
     }
   }
