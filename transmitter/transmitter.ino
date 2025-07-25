@@ -7,6 +7,7 @@ const int blueLaser  = 11;
 const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
+unsigned long bitRate = 500;
 
 void setup() {
   Serial.begin(9600);
@@ -21,7 +22,7 @@ void sendStartSignal() {
     analogWrite(redLaser,   redPower);
     analogWrite(greenLaser, greenPower);
     analogWrite(blueLaser,  bluePower);
-    delay(500);
+    delay(bitRate);
   }
 
   // Turn off lasers briefly after start signal
@@ -47,7 +48,7 @@ void sendWDM(String input) {
       analogWrite(redLaser,   ((r >> bit) & 1) ? redPower   : 255);
       analogWrite(greenLaser, ((g >> bit) & 1) ? greenPower : 255);
       analogWrite(blueLaser,  ((b >> bit) & 1) ? bluePower  : 255);
-      delay(500);
+      delay(bitRate);
     }
   }
 
@@ -70,7 +71,7 @@ void sendSingleColor(String input, char color) {
     char c = input.charAt(i);
     for (int bit = 7; bit >= 0; bit--) {
       analogWrite(laserPin, ((c >> bit) & 1) ? 255 : power);
-      delay(500);
+      delay(bitRate);
     }
   }
   analogWrite(laserPin, 255);
