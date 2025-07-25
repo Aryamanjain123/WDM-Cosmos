@@ -92,7 +92,12 @@ void loop() {
 
     if (mode == 'W') {
       sendWDM(msg);
-    } else if (mode == 'R' || mode == 'G' || mode == 'B') {
+    } else if (mode =='Z'){
+      analogWrite(redLaser,0);
+      analogWrite(greenLaser,0);
+      analogWrite(blueLaser,0);
+      delay(1000000);
+    }  else if (mode == 'R' || mode == 'G' || mode == 'B') {
       sendSingleColor(msg, mode);
     }
   }
