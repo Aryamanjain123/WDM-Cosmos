@@ -15,8 +15,6 @@ void setup() {
   pinMode(greenLaser, OUTPUT);
   pinMode(blueLaser, OUTPUT);
 }
-
-// Send start signal: 8 bits of all 1s (0xFF)
 void sendStartSignal(char color) {
   int laserPin = (color == 'R') ? redLaser :
                  (color == 'G') ? greenLaser :
