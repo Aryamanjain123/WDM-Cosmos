@@ -7,7 +7,7 @@ const int blueLaser  = 11;
 const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
-unsigned long bitRate = 25;
+const unsigned long bitPeriod = 25000UL; // 25 ms in μs
 unsigned long deadline;
 
 void setup() {
@@ -23,13 +23,13 @@ void sendStartSignal(char color) {
   if (color == 'R' || color == 'G' || color == 'B') {
     for (int bit = 0; bit < 8; bit++) {
       analogWrite(laserPin, 0);
-      delay(bitRate);
+      delay(bitPeriod / 1000);
     }}
   else{
     analogWrite(redLaser, 0);
     analogWrite(greenLaser, 0);
     analogWrite(blueLaser, 0);
-    delay(bitRate * 8);
+    delay(bitPeriod * 8 / 1000);
   }
 
   // Turn off lasers briefly after start signal
@@ -47,7 +47,7 @@ void sendWDM(String input) {
   }
 
   int len = input.length();
-  deadline = millis();
+  deadline = micros();
   for (int i = 0; i < len; i += 3) {
     char r = input.charAt(i);
     char g = input.charAt(i + 1);
@@ -57,8 +57,8 @@ void sendWDM(String input) {
       analogWrite(redLaser,   ((r >> bit) & 1) ? 255   : redPower);
       analogWrite(greenLaser, ((g >> bit) & 1) ? 255   : greenPower);
       analogWrite(blueLaser,  ((b >> bit) & 1) ? 255  : bluePower);
-      deadline += bitRate;
-      while(millis() < deadline){}
+      deadline += bitPeriod;
+      while(micros() < deadline){}
     }
   }
   Serial.println(millis());
@@ -77,13 +77,13 @@ void sendSingleColor(String input, char color) {
   int laserPin = (color == 'R') ? redLaser :
                  (color == 'G') ? greenLaser :
                                   blueLaser;
-  deadline = millis();
+  deadline = micros();
   for (int i = 0; i < input.length(); i++) {
     char c = input.charAt(i);
     for (int bit = 7; bit >= 0; bit--) {
       analogWrite(laserPin, ((c >> bit) & 1) ? 255 : power);
-      deadline += bitRate;
-      while(millis() < deadline){} 
+      deadline += bitPeriod;
+      while(micros() < deadline){} 
     }
   }
   Serial.println(millis());
