@@ -8,7 +8,7 @@ const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
 unsigned long bitRate = 25;
-unsigned long time;
+unsigned long deadline;
 
 void setup() {
   Serial.begin(9600);
@@ -47,7 +47,7 @@ void sendWDM(String input) {
   }
 
   int len = input.length();
-  time = millis();
+  deadline = millis();
   for (int i = 0; i < len; i += 3) {
     char r = input.charAt(i);
     char g = input.charAt(i + 1);
@@ -57,10 +57,8 @@ void sendWDM(String input) {
       analogWrite(redLaser,   ((r >> bit) & 1) ? 255   : redPower);
       analogWrite(greenLaser, ((g >> bit) & 1) ? 255   : greenPower);
       analogWrite(blueLaser,  ((b >> bit) & 1) ? 255  : bluePower);
-      //Serial.println(i);
-      //Serial.println(bit);
-      //delay(bitRate);
-      while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){}
+      deadline += bitRate;
+      while(millis() < deadline){}
     }
   }
   Serial.println(millis());
@@ -79,13 +77,13 @@ void sendSingleColor(String input, char color) {
   int laserPin = (color == 'R') ? redLaser :
                  (color == 'G') ? greenLaser :
                                   blueLaser;
-  time = millis();
+  deadline = millis();
   for (int i = 0; i < input.length(); i++) {
     char c = input.charAt(i);
     for (int bit = 7; bit >= 0; bit--) {
       analogWrite(laserPin, ((c >> bit) & 1) ? 255 : power);
-      //while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){} 
-      // fix the logic plz
+      deadline += bitRate;
+      while(millis() < deadline){} 
     }
   }
   Serial.println(millis());
