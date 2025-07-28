@@ -1,6 +1,6 @@
-text1="cat"
-text2="dog"
-text3="cow"
+text1="rememberance"
+text2="rememberance"
+text3="rememberance"
 stringy = ""
 for i in range(len(text1)):
     stringy += text1[i]
