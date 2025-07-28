@@ -2,14 +2,15 @@
 #define GREEN_PIN 3
 #define BLUE_PIN  4
 
+const int bitDuration = 50; // milliseconds per bit (~9600 baud)
+const int maxChars = 8 * 56;
 
-const int bitDuration = 500; // milliseconds per bit (~9600 baud)
-const int maxChars = 8 * 12;
+bool redMessage[maxChars + 1];
+bool greenMessage[maxChars + 1];
+bool blueMessage[maxChars + 1];
 
-int redMessage[maxChars + 1];
-int greenMessage[maxChars + 1];
-int blueMessage[maxChars + 1];
-
+int redCurrentChar[8];
+char redWords[maxChars/8];
 
 int redIndex = 0, greenIndex = 0, blueIndex = 0;
 bool redReceiving = false, greenReceiving = false, blueReceiving = false;
@@ -19,12 +20,22 @@ unsigned long redStartBitTime = 0, greenStartBitTime = 0, blueStartBitTime = 0;
 bool redStartBit = false, greenStartBit = false, blueStartBit = false;
 
 
+char bitsToChar(int bits[8]) {
+  int value = 0;
+  for(int i=0; i<8; i++){
+    value = value + bits[i] * pow(2, i);
+  }
+  return char(value);
+}
+
+
 void setup() {
  Serial.begin(9600);
  pinMode(RED_PIN, INPUT);
  pinMode(GREEN_PIN, INPUT);
  pinMode(BLUE_PIN, INPUT);
  redReceiving = false; greenReceiving = false; blueReceiving = false;
+ Serial.println("READY");
 }
 
 
@@ -54,17 +65,12 @@ void loop() {
      //delay(bitDuration/3);
    }
  } else if (redIndex < maxChars && (millis() - redStartTime) >= (redIndex+1.5)*bitDuration) {
-   //byte r = readByte(RED_PIN);
-   int r = digitalRead(RED_PIN);
-   redMessage[redIndex++] = r;
-   Serial.print("Red Message!!! ");
-   for(int i=0; i<redIndex; i++){
-     Serial.print(redMessage[i]);
-     if(i%8==7){
-       Serial.print(" ");
-     }
-   }
-   Serial.println(" :)");
+    int r = digitalRead(RED_PIN);
+    redMessage[redIndex++] = r;
+    redCurrentChar[redIndex%8] = r;
+    if(redIndex%8==7){
+      redWords[(redIndex+1)/8] = bitsToChar(redCurrentChar);
+    }
    /*
    if (r == '\n') {
      redMessage[redIndex] = '\0';
@@ -72,6 +78,17 @@ void loop() {
      redReceiving = false;
    }
    */
+  } else if (redReceiving && redIndex >= maxChars) {
+    Serial.print("Red Message!!! ");
+    for(int i=0; i<redIndex; i++){
+      Serial.print(redMessage[i]);
+      if(i%8==7){
+        Serial.print(" ");
+      }
+    }
+    Serial.println(" :)");
+    redReceiving = false;
+
   }
 
   //RED END
@@ -106,14 +123,6 @@ void loop() {
    //byte r = readByte(GREEN_PIN);
    int r = digitalRead(GREEN_PIN);
    greenMessage[greenIndex++] = r;
-   Serial.print("Green Message! ");
-   for(int i=0; i<greenIndex; i++){
-     Serial.print(greenMessage[i]);
-     if(i%8==7){
-       Serial.print(" ");
-     }
-   }
-   Serial.println(" :)");
    /*
    if (r == '\n') {
      greenMessage[greenIndex] = '\0';
@@ -121,6 +130,16 @@ void loop() {
      greenReceiving = false;
    } 
   */
+  } else if (greenReceiving && greenIndex>=maxChars){
+    Serial.print("Green Message! ");
+    for(int i=0; i<greenIndex; i++){
+      Serial.print(greenMessage[i]);
+      if(i%8==7){
+        Serial.print(" ");
+      }
+    }
+    Serial.println(" :)");
+    greenReceiving = false;
   }
 
   //GREEN END
@@ -154,14 +173,6 @@ void loop() {
    //byte r = readByte(BLUE_PIN);
    int r = digitalRead(BLUE_PIN);
    blueMessage[blueIndex++] = r;
-   Serial.print("Blue Message!! ");
-   for(int i=0; i<blueIndex; i++){
-     Serial.print(blueMessage[i]);
-     if(i%8==7){
-       Serial.print(" ");
-     }
-   }
-   Serial.println(" :)");
    /*
    if (r == '\n') {
      blueMessage[blueIndex] = '\0';
@@ -169,25 +180,20 @@ void loop() {
      blueReceiving = false;
    } 
   */
+  } else if(blueReceiving && blueIndex>=maxChars){
+    Serial.print("Blue Message!! ");
+    for(int i=0; i<blueIndex; i++){
+      Serial.print(blueMessage[i]);
+      if(i%8==7){
+        Serial.print(" ");
+      }
+    }
+    Serial.println(" :)");
+    blueReceiving = false;
   }
   //BLUE END
 
 }
-
-
-
-
-// Read 1 byte from a single digital pin
-byte readByte(int pin) {
- byte value = 0;
- for (int i = 0; i < 8; i++) {
-   delayMicroseconds(bitDuration);
-   int bit = digitalRead(pin);
-   value |= (bit << i);
- }
- return value;
-}
-
 
 void printMessage(const char* label, char* msg, unsigned long startTime) {
  unsigned long endTime = micros();
