@@ -7,7 +7,7 @@ const int blueLaser  = 11;
 const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
-unsigned long bitRate = 200;
+unsigned long bitRate = 50;
 
 void setup() {
   Serial.begin(9600);
