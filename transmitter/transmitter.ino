@@ -8,6 +8,7 @@ const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
 unsigned long bitRate = 50;
+unsigned long time;
 
 void setup() {
   Serial.begin(9600);
@@ -37,6 +38,7 @@ void sendStartSignal(char color) {
   analogWrite(blueLaser, 255);
 }
 void sendWDM(String input) {
+  Serial.print(millis());
   sendStartSignal('W');
 
   // Pad message with spaces so length is multiple of 3
@@ -45,6 +47,7 @@ void sendWDM(String input) {
   }
 
   int len = input.length();
+  time = millis();
   for (int i = 0; i < len; i += 3) {
     char r = input.charAt(i);
     char g = input.charAt(i + 1);
@@ -54,10 +57,14 @@ void sendWDM(String input) {
       analogWrite(redLaser,   ((r >> bit) & 1) ? 255   : redPower);
       analogWrite(greenLaser, ((g >> bit) & 1) ? 255   : greenPower);
       analogWrite(blueLaser,  ((b >> bit) & 1) ? 255  : bluePower);
+      //Serial.println(i);
+      //Serial.println(bit);
       delay(bitRate);
+      while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){
+      }
     }
   }
-
+  Serial.println(millis());
   // Turn off all lasers after message
   analogWrite(redLaser, 0);
   analogWrite(greenLaser, 0);
