@@ -50,41 +50,21 @@ void sendWDM(String input) {
     char g = input.charAt(i + 1);
     char b = input.charAt(i + 2);
 
-    Serial.print("Chunk: R=");
-    Serial.print(r); Serial.print(" ("); Serial.print((int)r); Serial.print("), ");
-    Serial.print("G="); Serial.print(g); Serial.print(" ("); Serial.print((int)g); Serial.print("), ");
-    Serial.print("B="); Serial.print(b); Serial.print(" ("); Serial.print((int)b); Serial.println(")");
-    Serial.print("Bits: ");
-
     for (int bit = 7; bit >= 0; bit--) {
-      int rBit = (r >> bit) & 1;
-      int gBit = (g >> bit) & 1;
-      int bBit = (b >> bit) & 1;
-
-      analogWrite(redLaser,   rBit ? 255 : redPower);
-      analogWrite(greenLaser, gBit ? 255 : greenPower);
-      analogWrite(blueLaser,  bBit ? 255 : bluePower);
-
-      Serial.print(rBit);
-      Serial.print(gBit);
-      Serial.print(bBit);
-      Serial.print(" ");
-
+      analogWrite(redLaser,   ((r >> bit) & 1) ? 255   : redPower);
+      analogWrite(greenLaser, ((g >> bit) & 1) ? 255   : greenPower);
+      analogWrite(blueLaser,  ((b >> bit) & 1) ? 255  : bluePower);
       delay(bitRate);
     }
-
-    Serial.println(); // Newline after each 8-bit chunk
   }
-  sendStartSignal('W');
+
   // Turn off all lasers after message
   analogWrite(redLaser, 0);
   analogWrite(greenLaser, 0);
   analogWrite(blueLaser, 0);
 }
-
 void sendSingleColor(String input, char color) {
   sendStartSignal(color);
-
   int power = (color == 'R') ? redPower :
               (color == 'G') ? greenPower :
                                bluePower;
@@ -95,25 +75,13 @@ void sendSingleColor(String input, char color) {
 
   for (int i = 0; i < input.length(); i++) {
     char c = input.charAt(i);
-    Serial.print("Char: ");
-    Serial.print(c);
-    Serial.print(" (");
-    Serial.print((int)c);
-    Serial.println(") Bits: ");
-    
     for (int bit = 7; bit >= 0; bit--) {
-      int bitVal = (c >> bit) & 1;
-      analogWrite(laserPin, bitVal ? 255 : power);
-      Serial.print(bitVal);
+      analogWrite(laserPin, ((c >> bit) & 1) ? 255 : power);
       delay(bitRate);
     }
-    Serial.println();  // move to next line after 8 bits
   }
-  sendStartSignal(color);
-
-  analogWrite(laserPin, 255); // Turn off
+  analogWrite(laserPin, 255);
 }
-
 void loop() {
   if (Serial.available() > 0) {
     char mode = Serial.read();  // 'R', 'G', 'B', or 'W'
@@ -137,6 +105,5 @@ void loop() {
     analogWrite(blueLaser,255);
   }
 }
-
 
 
