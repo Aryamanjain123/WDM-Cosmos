@@ -59,9 +59,8 @@ void sendWDM(String input) {
       analogWrite(blueLaser,  ((b >> bit) & 1) ? 255  : bluePower);
       //Serial.println(i);
       //Serial.println(bit);
-      delay(bitRate);
-      while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){
-      }
+      //delay(bitRate);
+      while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){}
     }
   }
   Serial.println(millis());
@@ -80,12 +79,13 @@ void sendSingleColor(String input, char color) {
   int laserPin = (color == 'R') ? redLaser :
                  (color == 'G') ? greenLaser :
                                   blueLaser;
-
+  time = millis();
   for (int i = 0; i < input.length(); i++) {
     char c = input.charAt(i);
     for (int bit = 7; bit >= 0; bit--) {
       analogWrite(laserPin, ((c >> bit) & 1) ? 255 : power);
-      delay(bitRate);
+      //while(millis() <= time + (8 - bit)*bitRate + (8*i/3)*bitRate){} 
+      // fix the logic plz
     }
   }
   Serial.println(millis());
