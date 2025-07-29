@@ -62,6 +62,7 @@ void sendWDM(String input) {
     }
   }
   Serial.println(millis());
+  //sendStartSignal('W');
   // Turn off all lasers after message
   analogWrite(redLaser, 0);
   analogWrite(greenLaser, 0);
@@ -87,6 +88,7 @@ void sendSingleColor(String input, char color) {
     }
   }
   Serial.println(millis());
+  //sendStartSignal(color);
   analogWrite(laserPin, 255);
 }
 void loop() {
