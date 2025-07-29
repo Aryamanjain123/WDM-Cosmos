@@ -50,10 +50,11 @@ void printBufferAsText(uint8_t *buffer, int totalBits) {
   for (int byteIndex = 0; byteIndex < totalBytes; byteIndex++) {
     uint8_t value = 0;
 
-    // Rebuild byte from 8 bits (LSB first since you stored with setBit)
-    for (int bit = 8; bit >=0; bit--) {
-      bool bitVal = getBit(buffer, byteIndex * 8 + bit);
-      value |= (bitVal << bit);
+    // Rebuild byte from 8 bits (LSB first, since we stored with setBit)
+    for (int bit = 7; bit > -1; bit--) {
+      if ( getBit(buffer, byteIndex * 8 + bit) ) {
+        value |= (1 << bit);
+      }
     }
 
     // End signal check (11111111)
