@@ -3,7 +3,7 @@
 #define BLUE_PIN  4
 
 const int bitDuration = 25;           // milliseconds per bit (~9600 baud)
-const int maxChars    = 8 * 300;       // total bits per message
+const int maxChars    = 8 * 100;       // total bits per message
 const int msgBytes    = (maxChars + 7) / 8;  // =69 bytes, to hold 552 bit1
 // pack bits into bytes
 uint8_t redMessage[msgBytes];
@@ -18,6 +18,7 @@ bool redReceiving   = false, greenReceiving   = false, blueReceiving   = false;
 unsigned long redStartTime    = 0, greenStartTime    = 0, blueStartTime    = 0;
 unsigned long redStartBitTime = 0, greenStartBitTime = 0, blueStartBitTime = 0;
 bool redStartBit   = false, greenStartBit   = false, blueStartBit   = false;
+bool redEnd = false;
 
 // helper to set/get a single bit in our uint8_t[] buffer
 inline void setBit(uint8_t *buf, int idx, bool v) {
@@ -34,6 +35,17 @@ char bitsToChar(int bits[8]) {
     value += bits[i] * (1 << i);
   }
   return char(value);
+}
+
+bool isEndSignal(int bits[8]){
+  bool isEnd = true;
+  for(int i=0; i<8; i++){
+    if (bits[i]==0){
+      isEnd = false;
+      break;
+    }
+  }
+  return isEnd;
 }
 
 void setup() {
@@ -63,6 +75,7 @@ void loop() {
       // clear buffer
       memset(redMessage, 0, msgBytes);
       Serial.println("RED START");
+      Serial.println(millis());
     }
 
   } else if (redIndex < maxChars && (millis() - redStartTime) >= (redIndex + 1.5) * bitDuration) {
@@ -73,16 +86,21 @@ void loop() {
     redCurrentChar[redIndex & 7] = bit;
     if ((redIndex & 7) == 7) {
       redWords[(redIndex >> 3)] = bitsToChar(redCurrentChar);
+      if(isEndSignal(redCurrentChar)){
+        redEnd = true;
+      }
     }
     redIndex++;
 
-  } else if (redReceiving && redIndex >= maxChars) {
+  } else if (redEnd || (redReceiving && redIndex >= maxChars)) {
+    Serial.println(millis());
     Serial.print("Red Message bits: ");
     for (int i = 0; i < redIndex; i++) {
       Serial.print(getBit(redMessage, i));
       if ((i & 7) == 7) Serial.print(' ');
     }
     Serial.println();
+    redEnd = false;
     /*
     Serial.print("Red Message chars: ");
     for (int i = 0; i < maxChars/8; i++) {
