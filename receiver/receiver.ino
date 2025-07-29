@@ -3,24 +3,29 @@
 #define BLUE_PIN  4
 
 const int bitDuration = 25;           // milliseconds per bit (~9600 baud)
-const int maxChars    = 8 * 100;       // total bits per message
-const int msgBytes    = (maxChars + 7) / 8;  // =69 bytes, to hold 552 bit1
-// pack bits into bytes
+const int maxChars    = 8 * 180;       // total bits per message
+const int msgBytes    = (maxChars + 7) / 8;  // =69 bytes, to hold 552 bits
+
 uint8_t redMessage[msgBytes];
 uint8_t greenMessage[msgBytes];
 uint8_t blueMessage[msgBytes];
 
 int   redCurrentChar[8];
-char  redWords[maxChars/8];
+char  redWords[maxChars / 8];
+
+int   greenCurrentChar[8];
+char  greenWords[maxChars / 8];
+
+int   blueCurrentChar[8];
+char  blueWords[maxChars / 8];
 
 int redIndex   = 0, greenIndex   = 0, blueIndex   = 0;
 bool redReceiving   = false, greenReceiving   = false, blueReceiving   = false;
 unsigned long redStartTime    = 0, greenStartTime    = 0, blueStartTime    = 0;
 unsigned long redStartBitTime = 0, greenStartBitTime = 0, blueStartBitTime = 0;
 bool redStartBit   = false, greenStartBit   = false, blueStartBit   = false;
-bool redEnd = false;
+bool redEnd = false, greenEnd = false, blueEnd = false;
 
-// helper to set/get a single bit in our uint8_t[] buffer
 inline void setBit(uint8_t *buf, int idx, bool v) {
   if (v) buf[idx >> 3] |=  (1 << (idx & 7));
   else   buf[idx >> 3] &= ~(1 << (idx & 7));
@@ -36,6 +41,32 @@ char bitsToChar(int bits[8]) {
   }
   return char(value);
 }
+
+// Convert a received bit buffer into text and print it
+void printBufferAsText(uint8_t *buffer, int totalBits) {
+  int totalBytes = totalBits / 8;
+  Serial.print("Decoded text: ");
+
+  for (int byteIndex = 0; byteIndex < totalBytes; byteIndex++) {
+    uint8_t value = 0;
+
+    // Rebuild byte from 8 bits (LSB first since you stored with setBit)
+    for (int bit = 8; bit >=0; bit--) {
+      bool bitVal = getBit(buffer, byteIndex * 8 + bit);
+      value |= (bitVal << bit);
+    }
+
+    // End signal check (11111111)
+    if (value == 0xFF) {
+      Serial.print(" [END]");
+      break;
+    }
+
+    Serial.print((char)value);
+  }
+  Serial.println();
+}
+
 
 bool isEndSignal(int bits[8]){
   bool isEnd = true;
@@ -72,7 +103,6 @@ void loop() {
       redReceiving   = true;
       redStartTime   = millis();
       redIndex       = 0;
-      // clear buffer
       memset(redMessage, 0, msgBytes);
       Serial.println("RED START");
       Serial.println(millis());
@@ -82,11 +112,10 @@ void loop() {
     bool bit = digitalRead(RED_PIN);
     setBit(redMessage, redIndex, bit);
 
-    // also build up current char
     redCurrentChar[redIndex & 7] = bit;
     if ((redIndex & 7) == 7) {
       redWords[(redIndex >> 3)] = bitsToChar(redCurrentChar);
-      if(isEndSignal(redCurrentChar)){
+      if (isEndSignal(redCurrentChar)) {
         redEnd = true;
       }
     }
@@ -100,14 +129,11 @@ void loop() {
       if ((i & 7) == 7) Serial.print(' ');
     }
     Serial.println();
-    redEnd = false;
-    /*
-    Serial.print("Red Message chars: ");
-    for (int i = 0; i < maxChars/8; i++) {
-      Serial.print(redWords[i]);
-    }
+
+    printBufferAsText(redMessage, redIndex);
     Serial.println();
-    */
+
+    redEnd = false;
     redReceiving = false;
   }
 
@@ -133,15 +159,34 @@ void loop() {
   } else if (greenIndex < maxChars && (millis() - greenStartTime) >= (greenIndex + 1.5) * bitDuration) {
     bool bit = digitalRead(GREEN_PIN);
     setBit(greenMessage, greenIndex, bit);
+
+    greenCurrentChar[greenIndex & 7] = bit;
+    if ((greenIndex & 7) == 7) {
+      greenWords[(greenIndex >> 3)] = bitsToChar(greenCurrentChar);
+      if (isEndSignal(greenCurrentChar)) {
+        greenEnd = true;
+      }
+    }
     greenIndex++;
 
-  } else if (greenReceiving && greenIndex >= maxChars) {
+  } else if (greenEnd || (greenReceiving && greenIndex >= maxChars)) {
     Serial.print("Green Message bits: ");
     for (int i = 0; i < greenIndex; i++) {
       Serial.print(getBit(greenMessage, i));
       if ((i & 7) == 7) Serial.print(' ');
     }
     Serial.println();
+
+    Serial.print("Green Message text: ");
+    for (int i = 0; i < greenIndex / 8; i++) {
+      if (greenWords[i] == '\0') break;
+      Serial.print(greenWords[i]);
+    }
+
+    printBufferAsText(greenMessage, greenIndex);
+    Serial.println();
+
+    greenEnd = false;
     greenReceiving = false;
   }
 
@@ -167,15 +212,34 @@ void loop() {
   } else if (blueIndex < maxChars && (millis() - blueStartTime) >= (blueIndex + 1.5) * bitDuration) {
     bool bit = digitalRead(BLUE_PIN);
     setBit(blueMessage, blueIndex, bit);
+
+    blueCurrentChar[blueIndex & 7] = bit;
+    if ((blueIndex & 7) == 7) {
+      blueWords[(blueIndex >> 3)] = bitsToChar(blueCurrentChar);
+      if (isEndSignal(blueCurrentChar)) {
+        blueEnd = true;
+      }
+    }
     blueIndex++;
 
-  } else if (blueReceiving && blueIndex >= maxChars) {
+  } else if (blueEnd || (blueReceiving && blueIndex >= maxChars)) {
     Serial.print("Blue Message bits: ");
     for (int i = 0; i < blueIndex; i++) {
       Serial.print(getBit(blueMessage, i));
       if ((i & 7) == 7) Serial.print(' ');
     }
     Serial.println();
+
+    Serial.print("Blue Message text: ");
+    for (int i = 0; i < blueIndex / 8; i++) {
+      if (blueWords[i] == '\0') break;
+      Serial.print(blueWords[i]);
+    }
+
+    printBufferAsText(blueMessage, blueIndex);
+    Serial.println();
+
+    blueEnd = false;
     blueReceiving = false;
   }
 }
