@@ -2,8 +2,8 @@
 #define GREEN_PIN 3
 #define BLUE_PIN  4
 
-const int bitDuration = 25;           // milliseconds per bit (~9600 baud)
-const int maxChars    = 8 * 180;       // total bits per message
+const int bitDuration = 15;           // milliseconds per bit (~9600 baud)
+const int maxChars    = 8 * 164;       // total bits per message
 const int msgBytes    = (maxChars + 7) / 8;  // =69 bytes, to hold 552 bits
 
 uint8_t redMessage[msgBytes];
@@ -42,6 +42,9 @@ char bitsToChar(int bits[8]) {
   return char(value);
 }
 
+char binaryToChar(String byteStr) {
+  return (char)strtol(byteStr.c_str(), NULL, 2);
+}
 // Convert a received bit buffer into text and print it
 void printBufferAsText(uint8_t *buffer, int totalBits) {
   int totalBytes = totalBits / 8;
@@ -49,15 +52,19 @@ void printBufferAsText(uint8_t *buffer, int totalBits) {
 
   for (int byteIndex = 0; byteIndex < totalBytes; byteIndex++) {
     uint8_t value = 0;
-
-    // Rebuild byte from 8 bits (LSB first since you stored with setBit)
-    for (int bit = 8; bit >=0; bit--) {
-      bool bitVal = getBit(buffer, byteIndex * 8 + bit);
-      value |= (bitVal << bit);
+    String byteStr = "";
+    // Rebuild byte from 8 bits (LSB first, since we stored with setBit)
+    for (int bit = 7; bit > -1; bit--) {
+      if(getBit(buffer, byteIndex * 8 + bit)){
+        byteStr = "1" + byteStr;
+      } else {
+        byteStr = "0" + byteStr;
+      }
     }
+    Serial.print(binaryToChar(byteStr));
 
     // End signal check (11111111)
-    if (value == 0xFF) {
+    if (byteStr == "11111111") {
       Serial.print(" [END]");
       break;
     }
@@ -177,12 +184,6 @@ void loop() {
     }
     Serial.println();
 
-    Serial.print("Green Message text: ");
-    for (int i = 0; i < greenIndex / 8; i++) {
-      if (greenWords[i] == '\0') break;
-      Serial.print(greenWords[i]);
-    }
-
     printBufferAsText(greenMessage, greenIndex);
     Serial.println();
 
@@ -229,13 +230,7 @@ void loop() {
       if ((i & 7) == 7) Serial.print(' ');
     }
     Serial.println();
-
-    Serial.print("Blue Message text: ");
-    for (int i = 0; i < blueIndex / 8; i++) {
-      if (blueWords[i] == '\0') break;
-      Serial.print(blueWords[i]);
-    }
-
+    
     printBufferAsText(blueMessage, blueIndex);
     Serial.println();
 
