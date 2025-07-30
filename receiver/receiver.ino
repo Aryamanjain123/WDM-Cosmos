@@ -4,7 +4,7 @@
 
 const unsigned int bitDuration   = 15;              // milliseconds per bit (~9600 baud)
 const unsigned long bitDurationUs = bitDuration * 1000UL;  // microseconds per bit
-const int  maxChars    = 8 * 492;                   // total bits per message
+const int  maxChars    = 8 * 164;                   // total bits per message
 const int  msgBytes    = (maxChars + 7) / 8;        // =69 bytes, to hold 552 bits
 
 uint8_t redMessage[msgBytes];
@@ -149,7 +149,7 @@ void loop() {
     }
 
   } else if (greenIndex < maxChars
-             && (micros() - greenStartTime) >= ((greenIndex + 1) * bitDurationUs + bitDurationUs / 2)) {
+             && (micros() - greenStartTime) >= ((greenIndex + 0.75) * bitDurationUs + bitDurationUs / 2)) {
     bool bit = digitalRead(GREEN_PIN);
     setBit(greenMessage, greenIndex, bit);
     greenCurrentChar[greenIndex & 7] = bit;
@@ -192,7 +192,7 @@ void loop() {
     }
 
   } else if (blueIndex < maxChars
-             && (micros() - blueStartTime) >= ((blueIndex + 1) * bitDurationUs + bitDurationUs / 2)) {
+             && (micros() - blueStartTime) >= ((blueIndex + 0.75) * bitDurationUs + bitDurationUs / 2)) {
     bool bit = digitalRead(BLUE_PIN);
     setBit(blueMessage, blueIndex, bit);
     blueCurrentChar[blueIndex & 7] = bit;
