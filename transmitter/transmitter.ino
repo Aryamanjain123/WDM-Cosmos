@@ -10,7 +10,7 @@ const int bluePower  = 0;
 const unsigned long bitPeriod = 15025UL; // 25 ms in μs
 unsigned long deadline;
 
-const int charsPerChunk = 3*84;
+int charsPerChunk = 32;
 
 void setup() {
   Serial.begin(9600);
@@ -94,8 +94,14 @@ void sendSingleColor(String input, char color) {
     }
   }
   Serial.println(millis());
-  //sendStartSignal(color);
-  analogWrite(laserPin, 255);
+  //sendStartSignal(color);// Turn off all lasers after message
+  analogWrite(redLaser, 255);
+  analogWrite(greenLaser, 255);
+  analogWrite(blueLaser, 255);
+  //wait for a full byte and a half to signal end of chunk
+  deadline = micros();
+  deadline += bitPeriod*(8*10);
+  while(micros() < deadline){}
 }
 
 
@@ -104,7 +110,9 @@ void loop() {
     char mode = Serial.read();  // 'R', 'G', 'B', or 'W'
 delay(5);
 String msg = Serial.readStringUntil('\n');
-
+if(mode == 'W'){
+  charsPerChunk = charsPerChunk*3;
+}
 // assume charsPerChunk is defined somewhere
 int numChunks = msg.length() / charsPerChunk
                 + (msg.length() % charsPerChunk ? 1 : 0);
