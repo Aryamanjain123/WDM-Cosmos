@@ -10,6 +10,8 @@ const int bluePower  = 0;
 const unsigned long bitPeriod = 10015UL; // 25 ms in μs
 unsigned long deadline;
 
+const int charsPerChunk = 3*84;
+
 void setup() {
   Serial.begin(9600);
   pinMode(redLaser, OUTPUT);
@@ -64,9 +66,13 @@ void sendWDM(String input) {
   Serial.println(millis());
   //sendStartSignal('W');
   // Turn off all lasers after message
-  analogWrite(redLaser, 0);
-  analogWrite(greenLaser, 0);
-  analogWrite(blueLaser, 0);
+  analogWrite(redLaser, 255);
+  analogWrite(greenLaser, 255);
+  analogWrite(blueLaser, 255);
+  //wait for a full byte and a half to signal end of chunk
+  deadline = micros();
+  deadline += bitPeriod*(8*8);
+  while(micros() < deadline){}
 }
 void sendSingleColor(String input, char color) {
   Serial.println(millis());
@@ -91,22 +97,55 @@ void sendSingleColor(String input, char color) {
   //sendStartSignal(color);
   analogWrite(laserPin, 255);
 }
+
+
 void loop() {
   if (Serial.available() > 0) {
     char mode = Serial.read();  // 'R', 'G', 'B', or 'W'
-    delay(5);
-    String msg = Serial.readStringUntil('\n');
+delay(5);
+String msg = Serial.readStringUntil('\n');
 
+// assume charsPerChunk is defined somewhere
+int numChunks = msg.length() / charsPerChunk
+                + (msg.length() % charsPerChunk ? 1 : 0);
+
+// allocate an array of the right size
+String* chunkList = new String[numChunks];
+
+String chunk;
+int chunkCount = 0;
+for (int i = 0; i < msg.length(); i++) {
+  chunk += msg[i];
+  // once we've collected charsPerChunk characters, store it
+  if ((i + 1) % charsPerChunk == 0) {
+    chunkList[chunkCount++] = chunk;
+    chunk = "";
+  }
+}
+  // if there's any remainder, store it too
+  if (chunk.length() > 0) {
+    chunkList[chunkCount++] = chunk;
+  }
+
+  // now send each chunk
+  for (int i = 0; i < chunkCount; i++) {
     if (mode == 'W') {
-      sendWDM(msg);
-    } else if (mode =='Z'){
-      analogWrite(redLaser,0);
-      analogWrite(greenLaser,0);
-      analogWrite(blueLaser,0);
-      delay(1000000);
-    }  else if (mode == 'R' || mode == 'G' || mode == 'B') {
-      sendSingleColor(msg, mode);
+      sendWDM(chunkList[i]);
     }
+    else if (mode == 'Z') {
+      analogWrite(redLaser,   0);
+      analogWrite(greenLaser, 0);
+      analogWrite(blueLaser,  0);
+      delay(1000000);
+    }
+    else if (mode == 'R' || mode == 'G' || mode == 'B') {
+      sendSingleColor(chunkList[i], mode);
+    }
+  }
+
+  // clean up
+  delete[] chunkList;
+    
   }
   else{
     analogWrite(redLaser,255);
