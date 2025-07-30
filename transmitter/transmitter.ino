@@ -7,7 +7,7 @@ const int blueLaser  = 11;
 const int redPower   = 150;
 const int greenPower = 0;
 const int bluePower  = 0;
-const unsigned long bitPeriod = 15023UL; // 25 ms in μs
+const unsigned long bitPeriod = 15025UL; // 25 ms in μs
 unsigned long deadline;
 
 void setup() {
@@ -114,4 +114,3 @@ void loop() {
     analogWrite(blueLaser,255);
   }
 }
-
