@@ -10,6 +10,8 @@ const int bluePower  = 0;
 const unsigned long bitPeriod = 15025UL; // 25 ms in μs
 unsigned long deadline;
 
+const int charsPerChunk = 60;
+
 void setup() {
   Serial.begin(9600);
   pinMode(redLaser, OUTPUT);
@@ -64,9 +66,13 @@ void sendWDM(String input) {
   Serial.println(millis());
   //sendStartSignal('W');
   // Turn off all lasers after message
-  analogWrite(redLaser, 0);
-  analogWrite(greenLaser, 0);
-  analogWrite(blueLaser, 0);
+  analogWrite(redLaser, 255);
+  analogWrite(greenLaser, 255);
+  analogWrite(blueLaser, 255);
+  //wait for a full byte and a half to signal end of chunk
+  deadline = micros();
+  deadline += bitPeriod*12;
+  while(micros() < deadline){}
 }
 void sendSingleColor(String input, char color) {
   Serial.println(millis());
@@ -91,22 +97,40 @@ void sendSingleColor(String input, char color) {
   //sendStartSignal(color);
   analogWrite(laserPin, 255);
 }
+
+String[] msgToChunks(String msg){
+  String chunkList[(msg.length()/charsPerChunk)+1];
+  String chunk = "";
+    for(int i=0; i<msg.length(); i++){
+      chunk += msg[i];
+      if(i % cap == cap-1):
+        chunkList.push_back(chunk);
+        chunk = ""
+    }
+
+  return chunkList;
+}
+
 void loop() {
   if (Serial.available() > 0) {
     char mode = Serial.read();  // 'R', 'G', 'B', or 'W'
     delay(5);
     String msg = Serial.readStringUntil('\n');
-
-    if (mode == 'W') {
-      sendWDM(msg);
-    } else if (mode =='Z'){
-      analogWrite(redLaser,0);
-      analogWrite(greenLaser,0);
-      analogWrite(blueLaser,0);
-      delay(1000000);
-    }  else if (mode == 'R' || mode == 'G' || mode == 'B') {
-      sendSingleColor(msg, mode);
+    String msgChunks[(msg.lengt()/charsPerChunk)+1] = msgToChunks(msg);
+    
+    for(int i=0; i<msgChunks; i++){
+      if (mode == 'W') {
+        sendWDM(msgChunks[i]);
+      } else if (mode =='Z'){
+        analogWrite(redLaser,0);
+        analogWrite(greenLaser,0);
+        analogWrite(blueLaser,0);
+        delay(1000000);
+      }  else if (mode == 'R' || mode == 'G' || mode == 'B') {
+        sendSingleColor(msgChunks[i], mode);
+      }
     }
+    
   }
   else{
     analogWrite(redLaser,255);
