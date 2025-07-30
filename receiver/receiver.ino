@@ -192,7 +192,7 @@ void loop() {
     }
 
   } else if (blueIndex < maxChars
-             && (micros() - blueStartTime) >= ((blueIndex + 0.75) * bitDurationUs + bitDurationUs / 2)) {
+             && (micros() - blueStartTime) >= ((blueIndex + 0.70) * bitDurationUs + bitDurationUs / 2)) {
     bool bit = digitalRead(BLUE_PIN);
     setBit(blueMessage, blueIndex, bit);
     blueCurrentChar[blueIndex & 7] = bit;
